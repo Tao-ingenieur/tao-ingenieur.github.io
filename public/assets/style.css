@@ -17,6 +17,13 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 
 /* Personal landing page */
+.language-toggle { border: 1px solid #cdd6c4; border-radius: 3px; padding: 4px 8px; min-width: 37px; background: transparent; color: #536b49; font-size: 10px; line-height: 1.6; white-space: nowrap; }
+.language-toggle:hover { background: var(--wash); }
+.personal-hero h1 > span[data-en] { color: var(--ink); }
+html[lang="en"] .personal-hero h1 { font-family: Georgia, serif; letter-spacing: -1px; }
+.secondary-link { display: inline-flex; align-items: center; gap: 24px; padding: 10px 17px; border: 1px solid #9aa88e; border-radius: 3px; color: #46603d; background: transparent; font-size: 11px; transition: background .2s; }
+.secondary-link:hover { background: var(--wash); }
+.personal-hero .profile-tagline { margin-bottom: 28px; }
 .personal-alias { font-family: var(--sans); font-size: 12px; letter-spacing: .2px; margin-left: 7px; }
 .personal-hero { gap: 68px; padding-block: 77px 78px; grid-template-columns: 1.1fr 1fr; }
 .personal-hero .eyebrow { font-size: 9px; letter-spacing: 1.8px; margin-bottom: 25px; }

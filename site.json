@@ -8,8 +8,7 @@
     "name": "Tao",
     "nickname": "ingenieur",
     "tagline": "关注人工智能与产品设计的工程师",
-    "bio": "CS 本硕，前大厂码农。",
-    "interests": ["阅读", "旅行", "篮球", "足球"]
+    "tagline_en": "An engineer exploring AI and product design."
   },
   "categories": {"科技": "technology", "生活": "life", "星空": "sky", "股市": "stock"}
 }

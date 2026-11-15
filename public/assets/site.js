@@ -1,4 +1,37 @@
 (() => {
+  const languageToggle = document.querySelector('#language-toggle');
+  if (languageToggle) {
+    let language = 'zh';
+    try {
+      if (localStorage.getItem('tao-home-language') === 'en') language = 'en';
+    } catch { /* Language switching also works without browser storage. */ }
+    const applyLanguage = () => {
+      const english = language === 'en';
+      document.documentElement.lang = english ? 'en' : 'zh-CN';
+      document.querySelectorAll('[data-zh][data-en]').forEach(node => {
+        node.textContent = node.dataset[language];
+      });
+      document.querySelectorAll('[data-zh-alt][data-en-alt]').forEach(node => {
+        node.alt = english ? node.dataset.enAlt : node.dataset.zhAlt;
+      });
+      document.querySelector('.brand').setAttribute('aria-label', english ? 'Tao · ingenieur home' : 'Tao · ingenieur 首页');
+      document.querySelector('.site-header nav').setAttribute('aria-label', english ? 'Main navigation' : '主导航');
+      const description = document.querySelector('.profile-tagline [data-en]').dataset[language];
+      document.querySelector('meta[name="description"]').content = description;
+      document.querySelector('meta[property="og:description"]').content = description;
+      document.querySelector('meta[property="og:locale"]').content = english ? 'en_US' : 'zh_CN';
+      languageToggle.textContent = english ? '中文' : 'EN';
+      languageToggle.setAttribute('aria-label', english ? '切换到中文' : 'Switch to English');
+      languageToggle.setAttribute('aria-pressed', String(english));
+      languageToggle.hidden = false;
+    };
+    languageToggle.addEventListener('click', () => {
+      language = language === 'zh' ? 'en' : 'zh';
+      try { localStorage.setItem('tao-home-language', language); } catch { /* Storage is optional. */ }
+      applyLanguage();
+    });
+    applyLanguage();
+  }
   const input = document.querySelector('#search-input');
   const buttons = [...document.querySelectorAll('[data-filter]')];
   const rows = [...document.querySelectorAll('[data-post-id]')];

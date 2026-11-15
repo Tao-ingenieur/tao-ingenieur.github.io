@@ -23,6 +23,10 @@ CONFIG = json.loads((ROOT / "site.json").read_text(encoding="utf-8"))
 E = lambda value: escape(str(value), quote=True)
 
 
+def bilingual(zh, en):
+    return f'<span data-zh="{E(zh)}" data-en="{E(en)}">{E(zh)}</span>'
+
+
 class BareLink(InlineProcessor):
     def handleMatch(self, match, data):
         url = match.group(1).rstrip("。，；！、")
@@ -94,8 +98,15 @@ def shell(title, content, path="/", description=None, current="", article=None):
     canonical = CONFIG["url"] + path
     full_title = "Tao · ingenieur" if path == "/" else title if title == CONFIG["title"] else title + " · " + CONFIG["title"]
     links = [("/", "首页", "home"), ("/blog/", "博客", "posts"), ("/about/", "关于", "about")]
-    nav = "".join(f'<a href="{url}" {"aria-current=page" if current == key else ""}>{label}</a>'
+    home = path == "/"
+    labels_en = {"home": "Home", "posts": "Blog", "about": "About"}
+    nav = "".join(f'<a href="{url}" {"aria-current=page" if current == key else ""}>{bilingual(label, labels_en[key]) if home else label}</a>'
                   for url, label, key in links)
+    project_label = bilingual("项目", "Projects") if home else "项目"
+    skip_label = bilingual("跳到正文", "Skip to content") if home else "跳到正文"
+    footer_quote = bilingual("古今多少事，都付笑谈中。", "Stories of past and present, shared with a smile.") if home else "古今多少事，都付笑谈中。"
+    rss_label = bilingual("RSS 订阅", "RSS feed") if home else "RSS 订阅"
+    language_switch = '<button class="language-toggle" id="language-toggle" type="button" aria-label="Switch to English" aria-pressed="false" hidden>EN</button>' if home else ''
     structured = {"@context": "https://schema.org", "@type": "Blog", "name": CONFIG["title"], "url": CONFIG["url"]}
     if path == "/":
         structured = {"@context": "https://schema.org", "@type": "Person", "name": CONFIG["profile"]["name"],
@@ -116,12 +127,12 @@ def shell(title, content, path="/", description=None, current="", article=None):
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="{E(CONFIG['title'])}" href="/feed.xml">
 <link rel="stylesheet" href="/assets/style.css"><script src="/assets/site.js" defer></script>
 <script type="application/ld+json">{json_ld}</script></head><body>
-<a class="skip" href="#main">跳到正文</a><div class="reading-progress" aria-hidden="true"></div>
+<a class="skip" href="#main">{skip_label}</a><div class="reading-progress" aria-hidden="true"></div>
 <header class="site-header wrap"><a class="brand" href="/" aria-label="Tao · ingenieur 首页"><span class="brand-mark">i<span>·</span></span><span>Tao<span class="brand-suffix personal-alias"> / ingenieur</span></span></a>
-<nav aria-label="主导航">{nav}<a class="github-link" href="{E(CONFIG['github'])}?tab=repositories" aria-label="GitHub 项目">项目 <span aria-hidden="true">↗</span></a></nav></header>
+<nav aria-label="主导航">{nav}<a class="github-link" href="{E(CONFIG['github'])}?tab=repositories">{project_label} <span aria-hidden="true">↗</span></a>{language_switch}</nav></header>
 <main id="main">{content}</main>
-<footer class="site-footer wrap"><div><a class="footer-brand" href="/">Tao <span class="footer-alias">/ ingenieur</span></a><p>古今多少事，都付笑谈中。</p></div>
-<div class="footer-right"><a href="/feed.xml">RSS 订阅 <span aria-hidden="true">↗</span></a><span>© {datetime.now().year} ingenieur</span></div></footer>
+<footer class="site-footer wrap"><div><a class="footer-brand" href="/">Tao <span class="footer-alias">/ ingenieur</span></a><p>{footer_quote}</p></div>
+<div class="footer-right"><a href="/feed.xml">{rss_label} <span aria-hidden="true">↗</span></a><span>© {datetime.now().year} ingenieur</span></div></footer>
 </body></html>'''
 
 
@@ -143,17 +154,15 @@ def post_row(post, index=0):
 
 def home_page(posts):
     profile = CONFIG["profile"]
-    interests = "".join(f'<span>{E(interest)}</span>' for interest in profile["interests"])
     rows = "".join(post_row(post) for post in posts[:3])
     return shell("Tao · ingenieur", f'''
 <section class="hero personal-hero wrap"><div class="hero-copy"><p class="eyebrow"><span class="small-line"></span> ENGINEER & EVERYDAY EXPLORER</p>
-<h1>你好，我是 <span class="profile-name">{E(profile['name'])}</span><span class="name-dot">.</span></h1>
-<p class="profile-handle">@{E(profile['nickname'])}</p><p class="profile-tagline">{E(profile['tagline'])}</p>
-<p class="profile-bio">{E(profile['bio'])}</p><div class="interests" aria-label="兴趣">{interests}</div>
-<div class="profile-links"><a class="primary-link" href="/blog/">读我的博客 <span aria-hidden="true">↗</span></a><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">GitHub 项目 <span aria-hidden="true">↗</span></a></div></div>
-<figure class="hero-photo personal-photo"><img src="/usr/uploads/2026/04/939619945.jpg" alt="三亚海湾的天空、海水与沿岸建筑" width="667" height="575" fetchpriority="high"><figcaption><span>三亚 · 一隅风景</span><span>SANYA, CHINA</span></figcaption></figure></section>
-<section class="journal recent-journal wrap" id="journal"><div class="section-top"><div><p class="eyebrow">RECENT WRITING</p><h2>最近的文字</h2></div><a class="archive-link" href="/blog/">全部博客 <span aria-hidden="true">↗</span></a></div>
-<div class="post-list">{rows}</div><p class="recent-closing">读过的书，走过的路，偶然的思考。</p></section>''', current="home", description=profile["tagline"] + "。" + profile["bio"])
+<h1>{bilingual('你好，我是', "Hi, I’m")} <span class="profile-name">{E(profile['name'])}</span><span class="name-dot">.</span></h1>
+<p class="profile-handle">@{E(profile['nickname'])}</p><p class="profile-tagline">{bilingual(profile['tagline'], profile['tagline_en'])}</p>
+<div class="profile-links"><a class="primary-link" href="/blog/">{bilingual('我的博客', 'My blog')} <span aria-hidden="true">↗</span></a><a class="secondary-link" href="{E(CONFIG['github'])}?tab=repositories">{bilingual('我的项目', 'My projects')} <span aria-hidden="true">↗</span></a></div></div>
+<figure class="hero-photo personal-photo"><img src="/usr/uploads/2026/04/939619945.jpg" alt="三亚海湾的天空、海水与沿岸建筑" data-zh-alt="三亚海湾的天空、海水与沿岸建筑" data-en-alt="Blue skies, the bay and waterfront buildings in Sanya" width="667" height="575" fetchpriority="high"><figcaption>{bilingual('三亚 · 一隅风景', 'A moment by the sea')}<span>SANYA, CHINA</span></figcaption></figure></section>
+<section class="journal recent-journal wrap" id="journal"><div class="section-top"><div><p class="eyebrow">RECENT WRITING</p><h2>{bilingual('最近的文字', 'Recent writing')}</h2></div><a class="archive-link" href="/blog/">{bilingual('全部博客', 'All posts')} <span aria-hidden="true">↗</span></a></div>
+<div class="post-list" lang="zh-CN">{rows}</div><p class="recent-closing">{bilingual('读过的书，走过的路，偶然的思考。', 'Books, journeys, and thoughts along the way.')}</p></section>''', current="home", description=profile["tagline"])
 
 
 def blog_page(posts):
@@ -225,8 +234,7 @@ def build():
     about = next((p for p in pages if p["slug"] == "start-page"), None)
     about_body = about["html"] if about else ""
     profile = CONFIG["profile"]
-    interests = "".join(f'<span>{E(i)}</span>' for i in profile["interests"])
-    write("about/index.html", shell("关于 Tao", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT ME</p><h1>Tao<span class="green-dot">.</span><span class="about-handle">@ingenieur</span></h1><div class="about-grid"><div><p class="profile-tagline">{E(profile['tagline'])}</p><p class="profile-bio">{E(profile['bio'])}</p><div class="interests" aria-label="兴趣">{interests}</div><div class="about-original prose">{about_body}</div><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">GitHub 项目 ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" width="900" height="600" loading="lazy"><figcaption>墨尔本上空的极光 · 2024.05.11</figcaption></figure></div><div class="about-bottom"><a href="/blog/">翻阅博客 →</a><a href="/feed.xml">通过 RSS 订阅 →</a></div></section>''', path="/about/", current="about"))
+    write("about/index.html", shell("关于 Tao", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT ME</p><h1>Tao<span class="green-dot">.</span><span class="about-handle">@ingenieur</span></h1><div class="about-grid"><div><p class="profile-tagline">{E(profile['tagline'])}</p><div class="about-original prose">{about_body}</div><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">我的项目 ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" width="900" height="600" loading="lazy"><figcaption>墨尔本上空的极光 · 2024.05.11</figcaption></figure></div><div class="about-bottom"><a href="/blog/">翻阅博客 →</a><a href="/feed.xml">通过 RSS 订阅 →</a></div></section>''', path="/about/", current="about"))
     search = [{k: p[k] for k in ("id", "title", "url", "plain", "categories")} for p in posts]
     write("search.json", json.dumps(search, ensure_ascii=False))
     redirects = json.loads((ROOT / "src/redirects.json").read_text(encoding="utf-8"))
