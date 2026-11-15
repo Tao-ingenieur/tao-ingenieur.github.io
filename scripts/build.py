@@ -57,7 +57,10 @@ def read_content():
         record["date_short"] = record["date"][:10]
         # Structural formatting only: preserve the source Markdown on disk.
         body = re.sub(r"^={3,}\s*$", "\n---\n", body, flags=re.M)
-        body = re.sub(r"^(第[一二三四五六七八九十]+部分[、，].+)$", r"## \1", body, flags=re.M)
+        original_body = body
+        body = re.sub(r"^(第[一二三四五六七八九十]+部分[、，].+)$",
+            lambda m: m[0] if original_body.count(m[0]) > 1 and m.start() == original_body.find(m[0])
+            else "## " + m[0], body, flags=re.M)
         body = re.sub(r"^(第\s*\d+\s*章[：:、].+)$", r"### \1", body, flags=re.M)
         md = markdown.Markdown(extensions=["extra", "sane_lists", "nl2br", "toc", LinkExtension()],
                                extension_configs={"toc": {"permalink": False}})
@@ -160,6 +163,7 @@ def article_page(post, posts):
     category = " · ".join(post["categories"])
     category_html = "".join(f'<a class="category-label" href="{category_link(n)}">{E(n)}</a>' for n in post["categories"])
     toc = f'<aside class="article-toc"><p>本篇目录</p>{post["toc"]}</aside>' if post["toc"] else ""
+    mobile_toc = f'<details class="mobile-toc"><summary>本篇目录</summary>{post["toc"]}</details>' if post["toc"] else ""
     position = posts.index(post)
     neighbours = []
     for offset, label in [(1, "上一篇"), (-1, "下一篇")]:
@@ -168,7 +172,7 @@ def article_page(post, posts):
             p = posts[i]
             neighbours.append(f'<a href="{E(p["url"])}"><span>{label}</span><strong>{E(p["title"])}</strong><span aria-hidden="true">↗</span></a>')
     content = f'''<div class="wrap article-wrap"><a class="back-link" href="/#journal">← 返回文章列表</a><header class="article-header"><div class="post-labels">{category_html}</div><h1>{E(post['title'])}</h1><p class="article-meta"><span>ingenieur</span><span>·</span><time datetime="{E(post['date'])}">{post['date_short']}</time><span>·</span><span>{post['minutes']} 分钟阅读</span></p></header>
-<div class="article-layout"><article class="prose" data-article>{post['html']}</article>{toc}</div>
+{mobile_toc}<div class="article-layout"><article class="prose" data-article>{post['html']}</article>{toc}</div>
 <div class="article-tail"><span>写于 {post['date_short']}</span><a href="#main">回到顶部 ↑</a></div><nav class="post-neighbours" aria-label="相邻文章">{''.join(neighbours)}</nav></div>'''
     return shell(post["title"], content, path=post["url"], description=post["excerpt"], current="posts", article=post)
 
