@@ -16,9 +16,9 @@
       });
       document.querySelector('.brand').setAttribute('aria-label', english ? 'Tao · ingenieur home' : 'Tao · ingenieur 首页');
       document.querySelector('.site-header nav').setAttribute('aria-label', english ? 'Main navigation' : '主导航');
-      const description = document.querySelector('.profile-tagline [data-en]').dataset[language];
-      document.querySelector('meta[name="description"]').content = description;
-      document.querySelector('meta[property="og:description"]').content = description;
+      document.querySelectorAll('[data-zh-content][data-en-content]').forEach(node => {
+        node.content = english ? node.dataset.enContent : node.dataset.zhContent;
+      });
       document.querySelector('meta[property="og:locale"]').content = english ? 'en_US' : 'zh_CN';
       languageToggle.textContent = english ? '中文' : 'EN';
       languageToggle.setAttribute('aria-label', english ? '切换到中文' : 'Switch to English');

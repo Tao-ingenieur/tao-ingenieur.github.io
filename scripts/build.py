@@ -96,12 +96,15 @@ def write(path: str, text: str):
     file.write_text(text, encoding="utf-8")
 
 
-def shell(title, content, path="/", description=None, current="", article=None):
+def shell(title, content, path="/", description=None, current="", article=None, description_en=None, title_en=None):
     description = description or CONFIG["subtitle"]
     canonical = CONFIG["url"] + path
     full_title = "Tao · ingenieur" if path == "/" else title if title == CONFIG["title"] else title + " · " + CONFIG["title"]
     links = [("/", "首页", "home"), ("/blog/", "博客", "posts"), ("/about/", "关于", "about")]
-    home = path == "/"
+    home = path in ("/", "/about/")
+    description_en = description_en or description
+    title_attrs = f'data-zh="{E(full_title)}" data-en="{E(title_en or full_title)}"' if home else ''
+    description_attrs = f'data-zh-content="{E(description)}" data-en-content="{E(description_en)}"' if home else ''
     labels_en = {"home": "Home", "posts": "Blog", "about": "About"}
     nav = "".join(f'<a href="{url}" {"aria-current=page" if current == key else ""}>{bilingual(label, labels_en[key]) if home else label}</a>'
                   for url, label, key in links)
@@ -122,10 +125,10 @@ def shell(title, content, path="/", description=None, current="", article=None):
     json_ld = json.dumps(structured, ensure_ascii=False).replace("<", "\\u003c")
     return f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{E(full_title)}</title><meta name="description" content="{E(description)}">
+<title {title_attrs}>{E(full_title)}</title><meta name="description" content="{E(description)}" {description_attrs}>
 <meta name="theme-color" content="#f7f7f2"><link rel="canonical" href="{E(canonical)}">
 <meta property="og:type" content="{'article' if article else 'website'}"><meta property="og:title" content="{E(full_title)}">
-<meta property="og:description" content="{E(description)}"><meta property="og:url" content="{E(canonical)}">
+<meta property="og:description" content="{E(description)}" {description_attrs}><meta property="og:url" content="{E(canonical)}">
 <meta property="og:site_name" content="{E(CONFIG['title'])}"><meta property="og:locale" content="zh_CN">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="{E(CONFIG['title'])}" href="/feed.xml">
 <link rel="stylesheet" href="/assets/style.css?v={ASSET_VERSIONS['style.css']}"><script src="/assets/site.js?v={ASSET_VERSIONS['site.js']}" defer></script>
@@ -165,7 +168,7 @@ def home_page(posts):
 <div class="profile-links"><a class="primary-link" href="/blog/">{bilingual('我的博客', 'My blog')} <span aria-hidden="true">↗</span></a><a class="secondary-link" href="{E(CONFIG['github'])}?tab=repositories">{bilingual('我的项目', 'My projects')} <span aria-hidden="true">↗</span></a></div></div>
 <figure class="hero-photo personal-photo"><img src="/usr/uploads/2026/04/939619945.jpg" alt="三亚海湾的天空、海水与沿岸建筑" data-zh-alt="三亚海湾的天空、海水与沿岸建筑" data-en-alt="Blue skies, the bay and waterfront buildings in Sanya" width="667" height="575" fetchpriority="high"><figcaption>{bilingual('三亚 · 一隅风景', 'A moment by the sea')}<span>SANYA, CHINA</span></figcaption></figure></section>
 <section class="journal recent-journal wrap" id="journal"><div class="section-top"><div><p class="eyebrow">RECENT WRITING</p><h2>{bilingual('最近的文字', 'Recent writing')}</h2></div><a class="archive-link" href="/blog/">{bilingual('全部博客', 'All posts')} <span aria-hidden="true">↗</span></a></div>
-<div class="post-list" lang="zh-CN">{rows}</div><p class="recent-closing">{bilingual('读过的书，走过的路，偶然的思考。', 'Books, journeys, and thoughts along the way.')}</p></section>''', current="home", description=profile["tagline"])
+<div class="post-list" lang="zh-CN">{rows}</div><p class="recent-closing">{bilingual('读过的书，走过的路，偶然的思考。', 'Books, journeys, and thoughts along the way.')}</p></section>''', current="home", description=profile["tagline"], description_en=profile["tagline_en"])
 
 
 def blog_page(posts):
@@ -235,9 +238,10 @@ def build():
     for p in posts:
         write(p["url"] + "index.html", article_page(p, posts))
     about = next((p for p in pages if p["slug"] == "start-page"), None)
-    about_body = about["html"] if about else ""
-    profile = CONFIG["profile"]
-    write("about/index.html", shell("关于 Tao", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT ME</p><h1>Tao<span class="green-dot">.</span><span class="about-handle">@ingenieur</span></h1><div class="about-grid"><div><p class="profile-tagline">{E(profile['tagline'])}</p><div class="about-original prose">{about_body}</div><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">我的项目 ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" width="900" height="600" loading="lazy"><figcaption>墨尔本上空的极光 · 2024.05.11</figcaption></figure></div><div class="about-bottom"><a href="/blog/">翻阅博客 →</a><a href="/feed.xml">通过 RSS 订阅 →</a></div></section>''', path="/about/", current="about"))
+    about_zh = about["plain"] if about else ""
+    about_en = about.get("body_en", about_zh) if about else ""
+    about_body = f'<p>{bilingual(about_zh, about_en)}</p>'
+    write("about/index.html", shell("关于 Tao", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT ME</p><h1>Tao<span class="green-dot">.</span><span class="about-handle">@ingenieur</span></h1><div class="about-grid"><div><div class="about-original prose">{about_body}</div><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">{bilingual('我的项目', 'My projects')} ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" data-zh-alt="2024 年 5 月 11 日墨尔本上空的极光" data-en-alt="Aurora over Melbourne on May 11, 2024" width="900" height="600" loading="lazy"><figcaption>{bilingual('墨尔本上空的极光 · 2024.05.11', 'Aurora over Melbourne · 2024.05.11')}</figcaption></figure></div><div class="about-bottom"><a href="/blog/">{bilingual('翻阅博客', 'Read the blog')} →</a><a href="/feed.xml">{bilingual('通过 RSS 订阅', 'Subscribe via RSS')} →</a></div></section>''', path="/about/", current="about", description=about_zh, description_en=about_en, title_en="About Tao · Ingenieur's Blog"))
     search = [{k: p[k] for k in ("id", "title", "url", "plain", "categories")} for p in posts]
     write("search.json", json.dumps(search, ensure_ascii=False))
     redirects = json.loads((ROOT / "src/redirects.json").read_text(encoding="utf-8"))
