@@ -54,6 +54,7 @@ html[lang="en"] .personal-hero h1 { font-family: Georgia, serif; letter-spacing:
 .about-handle { font: 12px var(--sans); letter-spacing: .5px; color: var(--muted); margin-left: 15px; }
 .about-page .about-original { font-size: 20px !important; color: var(--ink); margin-bottom: 25px; }
 .about-page .about-original p { margin-bottom: 0; }
+.about-quote { font-size: 12px; line-height: 1.8; color: var(--muted); margin: 0 0 28px; }
 @media(max-width:960px) {
   .personal-hero { gap: 34px; padding-block: 56px; }
   .personal-hero h1 { font-size: 36px; }

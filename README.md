@@ -54,7 +54,7 @@ python -m venv .venv
 - 关于页面在 `src/content/2.md`。
 - 姓名、昵称与首页的一句话定位在 `site.json` 的 `profile` 中维护；`tagline_en` 是首页的英文定位。
 - 首页与关于页右上角提供中英文切换，并在当前浏览器共用、记住选择。博客预览保持中文原文，博客栏目及文章不翻译。
-- 关于页中文句子在 `src/content/2.md` 正文中，英文译文在该文件的 `body_en` 元数据中。
+- 关于页大字简介的中文在 `src/content/2.md` 正文中，英文在 `body_en` 元数据中；小字格言分别在 `quote` 和 `quote_en` 中维护。
 - 提交并推送修改后，到仓库 Actions 查看 `Publish blog` 的执行结果。
 
 ## 目录
