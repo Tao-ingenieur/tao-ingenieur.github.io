@@ -15,9 +15,12 @@ class Links(HTMLParser):
         self.ids = set()
         self.images = []
         self.h1s = 0
+        self.post_ids = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if "data-post-id" in attrs:
+            self.post_ids.append(int(attrs["data-post-id"]))
         if "id" in attrs:
             self.ids.add(attrs["id"])
         if tag == "h1":
@@ -64,7 +67,10 @@ def verify():
     search = json.loads((OUT / "search.json").read_text(encoding="utf-8"))
     assert {r["id"] for r in search} == {r["id"] for r in posts}
     assert len(ET.parse(OUT / "feed.xml").findall("channel/item")) == len(posts)
-    assert len(ET.parse(OUT / "sitemap.xml").getroot()) == len(posts) + len(CONFIG["categories"]) + 3
+    assert len(ET.parse(OUT / "sitemap.xml").getroot()) == len(posts) + len(CONFIG["categories"]) + 4
+    assert parsed[OUT / "index.html"].post_ids == [p["id"] for p in posts[:3]], "Home must show exactly the three latest posts"
+    assert parsed[OUT / "blog/index.html"].post_ids == [p["id"] for p in posts], "Blog must retain all posts"
+    assert parsed[OUT / "index.html"].h1s == 1
     for post in posts:
         target = OUT / unquote(post["url"]).lstrip("/") / "index.html"
         assert parsed[target].h1s == 1, f"Expected one article heading: {target}"

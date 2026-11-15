@@ -92,11 +92,15 @@ def write(path: str, text: str):
 def shell(title, content, path="/", description=None, current="", article=None):
     description = description or CONFIG["subtitle"]
     canonical = CONFIG["url"] + path
-    full_title = CONFIG["title"] if path == "/" else title + " · " + CONFIG["title"]
-    links = [("/", "文章", "posts"), ("/archives/", "归档", "archives"), ("/about/", "关于", "about")]
+    full_title = "Tao · ingenieur" if path == "/" else title if title == CONFIG["title"] else title + " · " + CONFIG["title"]
+    links = [("/", "首页", "home"), ("/blog/", "博客", "posts"), ("/about/", "关于", "about")]
     nav = "".join(f'<a href="{url}" {"aria-current=page" if current == key else ""}>{label}</a>'
                   for url, label, key in links)
     structured = {"@context": "https://schema.org", "@type": "Blog", "name": CONFIG["title"], "url": CONFIG["url"]}
+    if path == "/":
+        structured = {"@context": "https://schema.org", "@type": "Person", "name": CONFIG["profile"]["name"],
+                      "alternateName": CONFIG["profile"]["nickname"], "url": CONFIG["url"],
+                      "description": CONFIG["profile"]["tagline"], "sameAs": [CONFIG["github"]]}
     if article:
         structured = {"@context": "https://schema.org", "@type": "BlogPosting", "headline": article["title"],
                       "datePublished": article["date"], "dateModified": article["updated"], "url": canonical,
@@ -113,10 +117,10 @@ def shell(title, content, path="/", description=None, current="", article=None):
 <link rel="stylesheet" href="/assets/style.css"><script src="/assets/site.js" defer></script>
 <script type="application/ld+json">{json_ld}</script></head><body>
 <a class="skip" href="#main">跳到正文</a><div class="reading-progress" aria-hidden="true"></div>
-<header class="site-header wrap"><a class="brand" href="/" aria-label="Ingenieur's Blog 首页"><span class="brand-mark">i<span>·</span></span><span>Ingenieur<span class="brand-suffix">'s Blog</span></span></a>
-<nav aria-label="主导航">{nav}<a class="github-link" href="{E(CONFIG['github'])}" aria-label="GitHub 主页">GitHub <span aria-hidden="true">↗</span></a></nav></header>
+<header class="site-header wrap"><a class="brand" href="/" aria-label="Tao · ingenieur 首页"><span class="brand-mark">i<span>·</span></span><span>Tao<span class="brand-suffix personal-alias"> / ingenieur</span></span></a>
+<nav aria-label="主导航">{nav}<a class="github-link" href="{E(CONFIG['github'])}?tab=repositories" aria-label="GitHub 项目">项目 <span aria-hidden="true">↗</span></a></nav></header>
 <main id="main">{content}</main>
-<footer class="site-footer wrap"><div><a class="footer-brand" href="/">Ingenieur's Blog</a><p>每个灵魂都值得拥有自己的天空。</p></div>
+<footer class="site-footer wrap"><div><a class="footer-brand" href="/">Tao <span class="footer-alias">/ ingenieur</span></a><p>古今多少事，都付笑谈中。</p></div>
 <div class="footer-right"><a href="/feed.xml">RSS 订阅 <span aria-hidden="true">↗</span></a><span>© {datetime.now().year} ingenieur</span></div></footer>
 </body></html>'''
 
@@ -137,26 +141,38 @@ def post_row(post, index=0):
 <a class="post-arrow" href="{E(post['url'])}" aria-label="阅读：{E(post['title'])}">↗</a></article>'''
 
 
-def index_page(posts):
+def home_page(posts):
+    profile = CONFIG["profile"]
+    interests = "".join(f'<span>{E(interest)}</span>' for interest in profile["interests"])
+    rows = "".join(post_row(post) for post in posts[:3])
+    return shell("Tao · ingenieur", f'''
+<section class="hero personal-hero wrap"><div class="hero-copy"><p class="eyebrow"><span class="small-line"></span> ENGINEER & EVERYDAY EXPLORER</p>
+<h1>你好，我是 <span class="profile-name">{E(profile['name'])}</span><span class="name-dot">.</span></h1>
+<p class="profile-handle">@{E(profile['nickname'])}</p><p class="profile-tagline">{E(profile['tagline'])}</p>
+<p class="profile-bio">{E(profile['bio'])}</p><div class="interests" aria-label="兴趣">{interests}</div>
+<div class="profile-links"><a class="primary-link" href="/blog/">读我的博客 <span aria-hidden="true">↗</span></a><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">GitHub 项目 <span aria-hidden="true">↗</span></a></div></div>
+<figure class="hero-photo personal-photo"><img src="/usr/uploads/2026/04/939619945.jpg" alt="三亚海湾的天空、海水与沿岸建筑" width="667" height="575" fetchpriority="high"><figcaption><span>三亚 · 一隅风景</span><span>SANYA, CHINA</span></figcaption></figure></section>
+<section class="journal recent-journal wrap" id="journal"><div class="section-top"><div><p class="eyebrow">RECENT WRITING</p><h2>最近的文字</h2></div><a class="archive-link" href="/blog/">全部博客 <span aria-hidden="true">↗</span></a></div>
+<div class="post-list">{rows}</div><p class="recent-closing">读过的书，走过的路，偶然的思考。</p></section>''', current="home", description=profile["tagline"] + "。" + profile["bio"])
+
+
+def blog_page(posts):
     chips = '<button type="button" class="filter active" data-filter="all" aria-pressed="true">全部 <span>' + str(len(posts)) + '</span></button>'
     for name in CONFIG["categories"]:
         count = sum(name in p["categories"] for p in posts)
         chips += f'<button type="button" class="filter" data-filter="{E(name)}" aria-pressed="false">{E(name)} <span>{count}</span></button>'
     rows = "".join(post_row(p, i) for i, p in enumerate(posts))
     return shell(CONFIG["title"], f'''
-<section class="hero wrap"><div class="hero-copy"><p class="eyebrow"><span class="small-line"></span> NOTES, IDEAS & EVERYDAY LIFE</p>
-<h1>古今多少事，<br><span>都付笑谈中。</span></h1><p class="hero-description">寰宇公园，一个灵魂的驿站。<br>在这里，留下读过的书、走过的路与偶然的思考。</p>
-<a class="text-link" href="#journal">翻开我的笔记 <span aria-hidden="true">↓</span></a></div>
-<figure class="hero-photo"><a href="/posts/start/" aria-label="阅读 Hello World"><img src="/usr/uploads/2026/04/939619945.jpg" alt="三亚海湾的天空、海水与沿岸建筑" width="667" height="575" fetchpriority="high"></a><figcaption><span>一隅风景，一段日常</span><span>01 / 随手记</span></figcaption><span class="photo-note" aria-hidden="true">a little space<br>for the soul.</span></figure></section>
-<section id="journal" class="journal wrap"><div class="section-top"><div><p class="eyebrow">THE JOURNAL</p><h2>文字之间<span class="article-total">{len(posts):02d}</span></h2></div><a class="archive-link" href="/archives/">按时间翻阅 <span aria-hidden="true">↗</span></a></div>
+<section class="blog-intro wrap"><p class="eyebrow">NOTES, IDEAS & EVERYDAY LIFE</p><h1>Ingenieur's Blog<span class="green-dot">.</span></h1><p>古今多少事，都付笑谈中。</p></section>
+<section id="journal" class="journal wrap"><div class="section-top"><div><p class="eyebrow">THE JOURNAL</p><h2>全部文章<span class="article-total">{len(posts):02d}</span></h2></div><a class="archive-link" href="/archives/">按时间翻阅 <span aria-hidden="true">↗</span></a></div>
 <div class="journal-tools"><div class="filters" role="group" aria-label="按分类筛选">{chips}</div><form class="search" role="search"><label for="search-input" class="sr-only">搜索文章</label><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.7"/><path d="m16 16 5 5"/></svg><input id="search-input" type="search" placeholder="寻找一段文字…" autocomplete="off"><kbd aria-hidden="true">/</kbd></form></div>
 <p class="search-status sr-only" role="status" aria-live="polite"></p><div class="post-list">{rows}</div><div class="empty-state" hidden><span>没有找到这段文字</span><p>试试另一个关键词，或切换到全部分类。</p><button type="button" id="reset-search">查看全部文章</button></div>
-<div class="journal-end"><span></span><p>慢慢记录，常常回望。</p><span></span></div><noscript><p>分类浏览：{' · '.join(f'<a href="{category_link(n)}">{n}</a>' for n in CONFIG['categories'])}。搜索需要启用 JavaScript。</p></noscript></section>''', current="posts")
+<div class="journal-end"><span></span><p>慢慢记录，常常回望。</p><span></span></div><noscript><p>分类浏览：{' · '.join(f'<a href="{category_link(n)}">{n}</a>' for n in CONFIG['categories'])}。搜索需要启用 JavaScript。</p></noscript></section>''', path="/blog/", current="posts")
 
 
 def listing(title, subtitle, posts, path):
     rows = "".join(post_row(p) for p in posts)
-    return shell(title, f'<section class="wrap inner-page"><a class="back-link" href="/">← 全部文章</a><p class="eyebrow">COLLECTION</p><h1>{E(title)}<span class="article-total">{len(posts):02d}</span></h1><p class="page-intro">{E(subtitle)}</p><div class="post-list">{rows}</div></section>', path=path, current="posts")
+    return shell(title, f'<section class="wrap inner-page"><a class="back-link" href="/blog/">← 全部文章</a><p class="eyebrow">COLLECTION</p><h1>{E(title)}<span class="article-total">{len(posts):02d}</span></h1><p class="page-intro">{E(subtitle)}</p><div class="post-list">{rows}</div></section>', path=path, current="posts")
 
 
 def article_page(post, posts):
@@ -171,7 +187,7 @@ def article_page(post, posts):
         if 0 <= i < len(posts):
             p = posts[i]
             neighbours.append(f'<a href="{E(p["url"])}"><span>{label}</span><strong>{E(p["title"])}</strong><span aria-hidden="true">↗</span></a>')
-    content = f'''<div class="wrap article-wrap"><a class="back-link" href="/#journal">← 返回文章列表</a><header class="article-header"><div class="post-labels">{category_html}</div><h1>{E(post['title'])}</h1><p class="article-meta"><span>ingenieur</span><span>·</span><time datetime="{E(post['date'])}">{post['date_short']}</time><span>·</span><span>{post['minutes']} 分钟阅读</span></p></header>
+    content = f'''<div class="wrap article-wrap"><a class="back-link" href="/blog/#journal">← 返回文章列表</a><header class="article-header"><div class="post-labels">{category_html}</div><h1>{E(post['title'])}</h1><p class="article-meta"><span>ingenieur</span><span>·</span><time datetime="{E(post['date'])}">{post['date_short']}</time><span>·</span><span>{post['minutes']} 分钟阅读</span></p></header>
 {mobile_toc}<div class="article-layout"><article class="prose" data-article>{post['html']}</article>{toc}</div>
 <div class="article-tail"><span>写于 {post['date_short']}</span><a href="#main">回到顶部 ↑</a></div><nav class="post-neighbours" aria-label="相邻文章">{''.join(neighbours)}</nav></div>'''
     return shell(post["title"], content, path=post["url"], description=post["excerpt"], current="posts", article=post)
@@ -185,7 +201,7 @@ def archive_page(posts):
     for month, items in groups.items():
         rows = "".join(f'<li><time datetime="{E(p["date"])}">{p["date_short"][5:].replace("-", ".")}</time><a href="{E(p["url"])}">{E(p["title"])}</a><span aria-hidden="true">↗</span></li>' for p in items)
         sections += f'<section class="archive-month"><h2>{month[:4]}<span>{int(month[5:])} 月</span></h2><ul>{rows}</ul></section>'
-    return shell("文章归档", f'<section class="wrap inner-page archive-page"><p class="eyebrow">THROUGH THE YEARS</p><h1>时间里的文字</h1><p class="page-intro">共 {len(posts)} 篇记录，按时间慢慢翻阅。</p>{sections}</section>', path="/archives/", current="archives")
+    return shell("文章归档", f'<section class="wrap inner-page archive-page"><p class="eyebrow">THROUGH THE YEARS</p><h1>时间里的文字</h1><p class="page-intro">共 {len(posts)} 篇记录，按时间慢慢翻阅。</p>{sections}</section>', path="/archives/", current="posts")
 
 
 def build():
@@ -198,7 +214,8 @@ def build():
     records = read_content()
     posts = [r for r in records if r["type"] == "post"]
     pages = [r for r in records if r["type"] == "page"]
-    write("index.html", index_page(posts))
+    write("index.html", home_page(posts))
+    write("blog/index.html", blog_page(posts))
     write("archives/index.html", archive_page(posts))
     for name in CONFIG["categories"]:
         subset = [p for p in posts if name in p["categories"]]
@@ -207,7 +224,9 @@ def build():
         write(p["url"] + "index.html", article_page(p, posts))
     about = next((p for p in pages if p["slug"] == "start-page"), None)
     about_body = about["html"] if about else ""
-    write("about/index.html", shell("关于", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT THIS SPACE</p><h1>你好，我是 ingenieur<span class="green-dot">.</span></h1><div class="about-grid"><div><div class="prose about-original">{about_body}</div><p class="about-thought">每个灵魂都值得拥有自己的天空。</p><p class="page-intro">古今多少事，都付笑谈中。</p><a class="text-link" href="{E(CONFIG['github'])}">在 GitHub 找到我 ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" width="900" height="600" loading="lazy"><figcaption>墨尔本上空的极光 · 2024.05.11</figcaption></figure></div><div class="about-bottom"><a href="/archives/">翻阅所有文章 →</a><a href="/feed.xml">通过 RSS 订阅 →</a></div></section>''', path="/about/", current="about"))
+    profile = CONFIG["profile"]
+    interests = "".join(f'<span>{E(i)}</span>' for i in profile["interests"])
+    write("about/index.html", shell("关于 Tao", f'''<section class="wrap inner-page about-page"><p class="eyebrow">A LITTLE ABOUT ME</p><h1>Tao<span class="green-dot">.</span><span class="about-handle">@ingenieur</span></h1><div class="about-grid"><div><p class="profile-tagline">{E(profile['tagline'])}</p><p class="profile-bio">{E(profile['bio'])}</p><div class="interests" aria-label="兴趣">{interests}</div><div class="about-original prose">{about_body}</div><a class="text-link" href="{E(CONFIG['github'])}?tab=repositories">GitHub 项目 ↗</a></div><figure><img src="/usr/uploads/2026/04/928419732.jpg" alt="2024 年 5 月 11 日墨尔本上空的极光" width="900" height="600" loading="lazy"><figcaption>墨尔本上空的极光 · 2024.05.11</figcaption></figure></div><div class="about-bottom"><a href="/blog/">翻阅博客 →</a><a href="/feed.xml">通过 RSS 订阅 →</a></div></section>''', path="/about/", current="about"))
     search = [{k: p[k] for k in ("id", "title", "url", "plain", "categories")} for p in posts]
     write("search.json", json.dumps(search, ensure_ascii=False))
     redirects = json.loads((ROOT / "src/redirects.json").read_text(encoding="utf-8"))
@@ -229,7 +248,7 @@ def build():
             ET.SubElement(item, "category").text = name
     write("feed.xml", ET.tostring(rss, encoding="unicode", xml_declaration=True))
     sitemap = ET.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
-    paths = ["/", "/about/", "/archives/"] + [category_link(c) for c in CONFIG["categories"]] + [p["url"] for p in posts]
+    paths = ["/", "/blog/", "/about/", "/archives/"] + [category_link(c) for c in CONFIG["categories"]] + [p["url"] for p in posts]
     for path in paths:
         node = ET.SubElement(sitemap, "url")
         ET.SubElement(node, "loc").text = CONFIG["url"] + path

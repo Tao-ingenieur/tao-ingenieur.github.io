@@ -4,5 +4,12 @@
   "author": "ingenieur",
   "url": "https://tao-ingenieur.github.io",
   "github": "https://github.com/Tao-ingenieur",
+  "profile": {
+    "name": "Tao",
+    "nickname": "ingenieur",
+    "tagline": "关注人工智能与产品设计的工程师",
+    "bio": "CS 本硕，前大厂码农。",
+    "interests": ["阅读", "旅行", "篮球", "足球"]
+  },
   "categories": {"科技": "technology", "生活": "life", "星空": "sky", "股市": "stock"}
 }

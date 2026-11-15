@@ -1,6 +1,8 @@
 # Ingenieur's Blog
 
-个人博客：<https://tao-ingenieur.github.io/>。
+Tao 的个人主页：<https://tao-ingenieur.github.io/>。
+
+博客栏目：<https://tao-ingenieur.github.io/blog/>。首页展示个人介绍、项目链接和最近三篇文章；文章原地址保持有效。
 
 静态博客，文章使用 Markdown 保存，推送到 `main` 后 GitHub Actions 自动构建并发布到 GitHub Pages。阅读网站无需数据库或服务器。
 
@@ -50,6 +52,7 @@ python -m venv .venv
 - 当前分类为 `科技`、`生活`、`星空`、`股市`；添加分类时同时修改 `site.json`。
 - 图片放进 `public/images/`，正文引用 `/images/文件名`。不要把图片放入 `dist/`，它会在构建时重新生成。
 - 关于页面在 `src/content/2.md`。
+- 姓名、昵称、一句话定位、经历和兴趣在 `site.json` 的 `profile` 中统一维护，首页与关于页面同步使用。
 - 提交并推送修改后，到仓库 Actions 查看 `Publish blog` 的执行结果。
 
 ## 目录
@@ -61,8 +64,6 @@ python -m venv .venv
 | `scripts/` | 导入、构建、校验脚本 |
 | `site.json` | 站名、正式网址、分类配置 |
 | `src/redirects.json` | 旧文章地址到新地址的对应关系 |
-| `backups/` | 本地原始备份，Git 忽略，禁止强制提交 |
-| `.local/` | 本地迁移报告和检查资料，Git 忽略 |
 | `dist/` | 自动生成的网站，Git 忽略 |
 
 ## 将来绑定自己的域名
@@ -76,6 +77,6 @@ python -m venv .venv
 
 ## 内容迁移
 
-来自原 Typecho 博客的公开内容已迁入。原备份保留在本地，不参与在线构建。后续直接编辑 Markdown，不要重复运行迁移覆盖现有文章。
+来自原 Typecho 博客的公开内容已迁入。迁移验收后，原始备份、临时报告和预览文件已按要求删除。后续直接编辑 Markdown，不要重复运行迁移覆盖现有文章。本地虚拟环境和构建输出也已清理，需要预览时按上面的步骤重新创建。
 
 文章与照片的权利归原作者所有。
