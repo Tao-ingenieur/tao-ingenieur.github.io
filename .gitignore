@@ -1,0 +1,9 @@
+# Original blog backups may contain private content and account data.
+/backups/
+
+# Dependencies and generated site output.
+/node_modules/
+/dist/
+/.venv/
+/.local/
+__pycache__/
