@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from email.utils import format_datetime
 from html import escape, unescape
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -21,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "dist"
 CONFIG = json.loads((ROOT / "site.json").read_text(encoding="utf-8"))
 E = lambda value: escape(str(value), quote=True)
+ASSET_VERSIONS = {name: hashlib.sha256((ROOT / "public/assets" / name).read_bytes()).hexdigest()[:10]
+                  for name in ("style.css", "site.js")}
 
 
 def bilingual(zh, en):
@@ -125,7 +128,7 @@ def shell(title, content, path="/", description=None, current="", article=None):
 <meta property="og:description" content="{E(description)}"><meta property="og:url" content="{E(canonical)}">
 <meta property="og:site_name" content="{E(CONFIG['title'])}"><meta property="og:locale" content="zh_CN">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate" type="application/rss+xml" title="{E(CONFIG['title'])}" href="/feed.xml">
-<link rel="stylesheet" href="/assets/style.css"><script src="/assets/site.js" defer></script>
+<link rel="stylesheet" href="/assets/style.css?v={ASSET_VERSIONS['style.css']}"><script src="/assets/site.js?v={ASSET_VERSIONS['site.js']}" defer></script>
 <script type="application/ld+json">{json_ld}</script></head><body>
 <a class="skip" href="#main">{skip_label}</a><div class="reading-progress" aria-hidden="true"></div>
 <header class="site-header wrap"><a class="brand" href="/" aria-label="Tao · ingenieur 首页"><span class="brand-mark">i<span>·</span></span><span>Tao<span class="brand-suffix personal-alias"> / ingenieur</span></span></a>
